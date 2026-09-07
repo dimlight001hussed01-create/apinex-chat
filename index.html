@@ -1,0 +1,31 @@
+<!doctype html><html lang="bn"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APInex Chat</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb;font-family:system-ui,Arial;color:#111827}
+.app{max-width:780px;margin:auto;height:100dvh;background:white;display:flex;flex-direction:column}
+header{background:#111827;color:white;padding:13px 15px;display:flex;justify-content:space-between;align-items:center}
+h3{margin:0}.tools button{margin-left:5px;border:0;border-radius:9px;padding:9px}.chat{flex:1;overflow:auto;padding:15px}
+.msg{max-width:88%;padding:11px 13px;margin:8px 0;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+.u{margin-left:auto;background:#111827;color:white}.a{background:#edf1f5}.file{font-size:12px;opacity:.85;margin-top:5px}
+form{padding:9px;border-top:1px solid #ddd;display:flex;gap:7px;align-items:end}textarea{flex:1;resize:none;border:1px solid #cbd5e1;border-radius:12px;padding:10px;font-size:16px;min-height:44px}
+button{cursor:pointer}.send{background:#111827;color:white;border:0;border-radius:10px;padding:11px 15px}
+input[type=file]{display:none}.attach{background:#eef2f7;border:0;border-radius:10px;padding:11px}
+#files{padding:0 12px 7px;font-size:12px;color:#64748b}
+</style></head><body>
+<div class="app"><header><h3>🤖 APInex Chat</h3><div class="tools"><button onclick="settings()">⚙️</button></div></header>
+<div id="chat" class="chat"></div><div id="files"></div>
+<form id="form"><label class="attach">📎<input id="picker" type="file" multiple accept="image/*,.zip,.rar,.7z,.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv"></label>
+<textarea id="input" placeholder="মেসেজ লিখুন..."></textarea><button class="send">Send</button></form></div>
+<script>
+const chat=document.querySelector('#chat'),input=document.querySelector('#input'),picker=document.querySelector('#picker');
+let history=[];
+function add(role,text,files=[]){let d=document.createElement('div');d.className='msg '+(role==='user'?'u':'a');d.textContent=text; if(files.length){let f=document.createElement('div');f.className='file';f.textContent='📎 '+files.map(x=>x.name).join(', ');d.appendChild(f)} chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+function settings(){let base=prompt('Backend URL দিন (যেমন https://your-app.onrender.com)',localStorage.backend||'');if(base){localStorage.backend=base.replace(/\/$/,'');alert('Backend URL saved')}} 
+picker.onchange=()=>{document.querySelector('#files').textContent=picker.files.length?'Selected: '+[...picker.files].map(f=>f.name).join(', '):''}
+document.querySelector('#form').onsubmit=async e=>{e.preventDefault();let text=input.value.trim(),files=[...picker.files];if(!text&&!files.length)return;
+add('user',text||'ফাইল পাঠানো হয়েছে',files);input.value='';picker.value='';document.querySelector('#files').textContent='';
+let fd=new FormData();fd.append('message',text);fd.append('history',JSON.stringify(history.slice(-20)));files.forEach(f=>fd.append('files',f));
+let d=await (async()=>{try{let r=await fetch((localStorage.backend||'')+'/api/chat',{method:'POST',body:fd});return await r.json()}catch(x){return {error:'Backend URL সেট করুন অথবা server চালু করুন।'}}})();
+let answer=d.error?'❌ '+d.error:(d.reply||'কোনো উত্তর পাওয়া যায়নি।');add('assistant',answer);history.push({role:'user',content:text},{role:'assistant',content:answer})}
+</script></body></html>
